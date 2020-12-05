@@ -1,7 +1,11 @@
 import os 
 
 class flight_path(object):
-    # a basic flight path class 
+    """ 
+    a helper class to set a sequence of camera views to generate a flight path. 
+    
+    see ../aspect_mesh_source.py for example usage.
+    """
     def __init__(self,auto_build = True, frame_offset = 0):
         self.anchor_points = []
         self.anchor_keys = ('steps_from_previous','cam_position','cam_width','north_vector','focus')
@@ -33,30 +37,28 @@ class flight_path(object):
         ----------
         steps_from_previous : int
             number of increments between this point and previous (the default is 2).
-        cam_position : type
-            Description of parameter `cam_position` (the default is None).
-        cam_width : type
-            Description of parameter `cam_width` (the default is None).
-        north_vector : type
-            Description of parameter `north_vector` (the default is None).
-        focus : type
-            Description of parameter `focus` (the default is None).
+        cam_position : array-like
+            the position to move to
+        cam_width : array-like
+            the camera width to move to
+        north_vector : array-like
+            the north vector to move to
+        focus : array-like
+            the focus point of the camera
 
-        Returns
-        -------
-        type
-            Description of returned object.
-
+        
+        all of the arrays should be length 3. Anything not specified will pull the previous anchor 
+        point's value. 
         """
               
         new_point = (steps_from_previous,cam_position,cam_width,north_vector,focus)
         new_anchor = dict(zip(self.anchor_keys,new_point))
         self.anchor_points.append(self._validate_new_anchor(new_anchor))
         if len(self.anchor_points) > 1 and self.auto_build:
-            self.build_flight_path()
+            self._build_flight_path()
         
-    def build_flight_path(self): 
-        # builds a flight path from the anchor points 
+    def _build_flight_path(self): 
+        # builds a flight path from the anchor points
         if len(self.anchor_points) <= 1: 
             raise ValueError("at least 2 anchor_points are required.")
         
@@ -79,7 +81,31 @@ class flight_path(object):
 
 
 class flight_animator(object):
-    def __init__(self, yt_scene, flight_path, base_name = 'mesh_source_', save_dir='./', resolution = (400,00), sigma_clip = None):
+    '''
+    given a yt scene and a flight_path, will step through and render each frame. 
+    
+    see ../aspect_mesh_source.py for example usage.
+    
+    Parameters
+        ----------
+        yt_scene : a yt scene            
+        flight_path : a list of dicts
+            a list of sequential camera settings. each element should be a dictionary with the
+            the following keys: ('frame','cam_position','cam_width','north_vector','focus'). 
+            Can generate this list with the mesh_animator.flight_path class            
+        base_name : str
+            filename base for each frame (default 'mesh_source_')
+        save_dir : str
+            directory to save to (default './')
+        resolution : tuple
+            resolution to save each frame at (default (400,400)).
+        sigma_clip : None or float
+            if not None, gets passed to sc.save('savename.png',sigma_clip = sigma_clip)
+            default is None.
+            
+    after instantiating, call flight_animator.render() to render all frames. 
+    '''
+    def __init__(self, yt_scene, flight_path, base_name = 'mesh_source_', save_dir='./', resolution = (400,400), sigma_clip = None):
         self.sc = yt_scene
         self.save_dir = save_dir
         self.base_name = base_name
@@ -106,5 +132,3 @@ class flight_animator(object):
             else:
                 self.sc.save(save_name)
             
-            # set camera position 
-# 
